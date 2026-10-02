@@ -1,119 +1,26 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import ShippingSummary from "./shipping-summary";
+import { products, money, useCart } from "./cart-provider";
 
-import { useEffect, useState } from "react";
+export default function Catalog({
+  view = "products",
+}: {
+  view?: "products" | "cart";
+}) {
+  const {
+    cart, cartReady, items, count, subtotal,
+    changeQuantity, removeProduct,
+  } = useCart();
 
-const compositions: Record<string, {
-  fluralaner: number;
-  silimarina: number;
-}> = {
-  "05": { fluralaner: 125, silimarina: 50 },
-  "10": { fluralaner: 250, silimarina: 100 },
-  "20": { fluralaner: 500, silimarina: 200 },
-  "40": { fluralaner: 1000, silimarina: 400 },
-  "60": { fluralaner: 1500, silimarina: 600 },
-};
-
-const products = [
-  { id: "05", name: "Puñete 5", weight: "Hasta 5 kg", cents: 6999, color: "#E5EEDB" },
-  { id: "10", name: "Puñete 10", weight: "5–10 kg", cents: 7799, color: "#E9E2F0" },
-  { id: "20", name: "Puñete 20", weight: "11–20 kg", cents: 8490, color: "#F3DED0" },
-  { id: "40", name: "Puñete 40", weight: "21–40 kg", cents: 10710, color: "#DCEBE3" },
-  { id: "60", name: "Puñete 60", weight: "41–60 kg", cents: 12199, color: "#DDE8EF" },
-].map((product) => ({
-  ...product,
-  composition: compositions[product.id],
-  originalCents: product.cents,
-  cents: Math.round(product.cents * 90 / 100),
-}));
-
-const currency = new Intl.NumberFormat("es-PE", {
-  style: "currency",
-  currency: "PEN",
-});
-
-const money = (cents: number) => currency.format(cents / 100);
-
-export default function Catalog() {
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [cartReady, setCartReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function restoreCart() {
-      const restored: Record<string, number> = {};
-
-      try {
-        const saved: unknown = JSON.parse(
-          localStorage.getItem("the-pawmart-cart-v1") ?? "{}"
-        );
-
-        if (saved && typeof saved === "object" && !Array.isArray(saved)) {
-          const quantities = saved as Record<string, unknown>;
-
-          for (const product of products) {
-            const quantity = quantities[product.id];
-            if (
-              typeof quantity === "number" &&
-              Number.isInteger(quantity) &&
-              quantity > 0 &&
-              quantity <= 99
-            ) {
-              restored[product.id] = quantity;
-            }
-          }
-        }
-      } catch {
-        // Si el navegador bloquea el almacenamiento, el carrito sigue funcionando.
-      }
-
-      await Promise.resolve();
-
-      if (!cancelled) {
-        setCart(restored);
-        setCartReady(true);
-      }
-    }
-
-    void restoreCart();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!cartReady) return;
-
-    try {
-      localStorage.setItem("the-pawmart-cart-v1", JSON.stringify(cart));
-    } catch {
-      // El carrito puede utilizarse aunque no sea posible guardarlo.
-    }
-  }, [cart, cartReady]);
-
-  const items = products.filter((product) => (cart[product.id] ?? 0) > 0);
-  const count = items.reduce((sum, product) => sum + cart[product.id], 0);
-  const subtotal = items.reduce(
-    (sum, product) => sum + product.cents * cart[product.id],
-    0,
-  );
-
-  function changeQuantity(id: string, delta: number) {
-    setCart((current) => ({
-      ...current,
-      [id]: Math.max(0, Math.min(99, (current[id] ?? 0) + delta)),
-    }));
-  }
-
-  function removeProduct(id: string) {
-    setCart((current) => {
-      const next = { ...current };
-      delete next[id];
-      return next;
-    });
+  if (!cartReady) {
+    return (
+      <p role="status" className="px-6 py-12 text-center text-[#53645B]">
+        Preparando tu selección…
+      </p>
+    );
   }
 
   const quantityButton =
@@ -121,12 +28,13 @@ export default function Catalog() {
 
   return (
     <section
-      id="coleccion"
-      aria-labelledby="catalog-title"
+      id={view === "cart" ? "seleccion" : "coleccion"}
+      aria-labelledby={view === "cart" ? "cart-title" : "catalog-title"}
       className="border-y border-[#173F35]/10 bg-white"
     >
       <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
-        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        {view === "products" && (<>
+<div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-[#53645B]">
               NUESTRA PRIMERA COLECCIÓN
@@ -143,15 +51,14 @@ export default function Catalog() {
             </p>
           </div>
 
-          <a
-            href="#carrito"
+          <Link href="/carrito"
             className="inline-flex min-h-11 items-center justify-center gap-3 self-start rounded-full bg-[#DCEBE3] px-5 py-3 text-sm font-semibold"
           >
             Ver carrito
             <span className="flex min-w-7 items-center justify-center rounded-full bg-[#173F35] px-2 py-1 text-xs text-white">
               {count}
             </span>
-          </a>
+          </Link>
         </div>
 
         <div className="mt-7 rounded-xl border border-[#173F35]/15 bg-[#FAF8F5] px-4 py-3 text-xs leading-5 text-[#53645B]">
@@ -166,13 +73,13 @@ export default function Catalog() {
               key={product.id}
               className="flex flex-col overflow-hidden rounded-2xl border border-[#173F35]/15 bg-white"
             >
-              <div className="relative aspect-square bg-white">
+              <div className="relative aspect-[4/5] overflow-hidden bg-white">
                 <Image
                   src={`/productos/punete-${Number(product.id)}.png`}
                   alt={`Presentación de ${product.name}, para perros: ${product.weight}`}
                   fill
                   sizes="(min-width: 1280px) 220px, (min-width: 1024px) 30vw, (min-width: 480px) 45vw, 90vw"
-                  className="object-contain"
+                  className="object-cover object-center"
                 />
               </div>
 
@@ -281,7 +188,11 @@ export default function Catalog() {
           Imágenes promocionales de cada presentación. Consulta la ficha del producto y las indicaciones de su envase antes de utilizarlo.
         </p>
 
-        <section
+        
+</>)}
+{view === "cart" && (<>
+<Link href="/productos" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">← Seguir comprando</Link>
+<section
           id="carrito"
           aria-labelledby="cart-title"
           className="mt-12 rounded-3xl border border-[#173F35]/15 bg-[#FAF8F5] p-5 sm:p-8"
@@ -295,6 +206,17 @@ export default function Catalog() {
             </span>
           </div>
 
+          {items.length > 0 && (
+            <div className="mt-5 rounded-2xl bg-[#DCEBE3] px-5 py-4">
+              <p className="text-lg font-semibold tracking-tight">
+                Elegiste cuidarlo.
+              </p>
+              <p className="mt-1 text-sm leading-6 text-[#53645B]">
+                Gracias por confiar en THE PAWMART.
+              </p>
+            </div>
+          )}
+
           <p role="status" aria-atomic="true" className="mt-3 text-sm text-[#53645B]">
             {count === 0
               ? "Tu carrito está vacío. Agrega una presentación para empezar."
@@ -307,11 +229,22 @@ export default function Catalog() {
                 {items.map((product) => (
                   <li key={product.id} className="py-5 first:pt-0">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold">{product.name}</h3>
-                        <p className="mt-1 text-sm text-[#53645B]">
-                          {money(product.cents)} por unidad
-                        </p>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-white">
+                          <Image
+                            src={`/productos/punete-${Number(product.id)}.png`}
+                            alt={`Presentación de ${product.name}`}
+                            fill
+                            sizes="64px"
+                            className="object-cover object-center"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold">{product.name}</h3>
+                          <p className="mt-1 text-sm text-[#53645B]">
+                            {money(product.cents)} por unidad
+                          </p>
+                        </div>
                       </div>
                       <p className="shrink-0 font-semibold tabular-nums">
                         {money(product.cents * cart[product.id])}
@@ -359,25 +292,12 @@ export default function Catalog() {
                 ))}
               </ul>
 
-              <div className="self-start rounded-2xl bg-white p-5">
-                <h3 className="font-semibold">Resumen</h3>
-                <div className="mt-5 flex items-center justify-between gap-3">
-                  <span className="text-sm">Subtotal</span>
-                  <span className="text-xl font-semibold tabular-nums">
-                    {money(subtotal)}
-                  </span>
-                </div>
-                <p className="mt-3 text-xs leading-5 text-[#53645B]">
-                  Delivery pendiente de calcular según el destino.
-                </p>
-                <div className="mt-5 border-t border-[#173F35]/10 pt-4 text-sm leading-6 text-[#53645B]">
-                  Los pagos aún no están habilitados. Este carrito permite
-                  probar la selección de productos.
-                </div>
-              </div>
+              <ShippingSummary subtotal={subtotal} />
             </div>
           )}
         </section>
+</>)}
+
       </div>
     </section>
   );
