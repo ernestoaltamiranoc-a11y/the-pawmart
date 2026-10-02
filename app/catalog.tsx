@@ -1,15 +1,29 @@
 "use client";
 
+import Image from "next/image";
+
 import { useEffect, useState } from "react";
 
+const compositions: Record<string, {
+  fluralaner: number;
+  silimarina: number;
+}> = {
+  "05": { fluralaner: 125, silimarina: 50 },
+  "10": { fluralaner: 250, silimarina: 100 },
+  "20": { fluralaner: 500, silimarina: 200 },
+  "40": { fluralaner: 1000, silimarina: 400 },
+  "60": { fluralaner: 1500, silimarina: 600 },
+};
+
 const products = [
-  { id: "05", name: "Puñete 5", weight: "2–5 kg", cents: 6999, color: "#E5EEDB" },
-  { id: "10", name: "Puñete 10", weight: "6–10 kg", cents: 7799, color: "#E9E2F0" },
+  { id: "05", name: "Puñete 5", weight: "Hasta 5 kg", cents: 6999, color: "#E5EEDB" },
+  { id: "10", name: "Puñete 10", weight: "5–10 kg", cents: 7799, color: "#E9E2F0" },
   { id: "20", name: "Puñete 20", weight: "11–20 kg", cents: 8490, color: "#F3DED0" },
   { id: "40", name: "Puñete 40", weight: "21–40 kg", cents: 10710, color: "#DCEBE3" },
   { id: "60", name: "Puñete 60", weight: "41–60 kg", cents: 12199, color: "#DDE8EF" },
 ].map((product) => ({
   ...product,
+  composition: compositions[product.id],
   originalCents: product.cents,
   cents: Math.round(product.cents * 90 / 100),
 }));
@@ -152,20 +166,14 @@ export default function Catalog() {
               key={product.id}
               className="flex flex-col overflow-hidden rounded-2xl border border-[#173F35]/15 bg-white"
             >
-              <div
-                className="flex h-36 flex-col justify-between p-5 sm:h-44"
-                style={{ backgroundColor: product.color }}
-                aria-hidden="true"
-              >
-                <span className="text-[10px] font-semibold tracking-[0.2em]">
-                  PRESENTACIÓN
-                </span>
-                <div className="flex items-end justify-between">
-                  <span className="text-6xl font-semibold leading-none tracking-[-0.08em]">
-                    {product.id}
-                  </span>
-                  <span className="pb-1 text-xs font-medium">PUÑETE</span>
-                </div>
+              <div className="relative aspect-square bg-white">
+                <Image
+                  src={`/productos/punete-${Number(product.id)}.png`}
+                  alt={`Presentación de ${product.name}, para perros: ${product.weight}`}
+                  fill
+                  sizes="(min-width: 1280px) 220px, (min-width: 1024px) 30vw, (min-width: 480px) 45vw, 90vw"
+                  className="object-contain"
+                />
               </div>
 
               <div className="flex flex-1 flex-col p-5">
@@ -178,6 +186,21 @@ export default function Catalog() {
                 <p className="mt-2 text-sm text-[#53645B]">
                   Rango de peso: {product.weight}
                 </p>
+                <details className="mt-3 text-xs text-[#53645B]">
+                  <summary className="flex min-h-11 cursor-pointer items-center underline underline-offset-4 hover:text-[#173F35]">
+                    Ver composición
+                  </summary>
+                  <dl className="space-y-2 rounded-xl bg-[#FAF8F5] p-3">
+                    <div>
+                      <dt className="font-semibold">Fluralaner</dt>
+                      <dd>{product.composition.fluralaner} mg</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold">Silimarina</dt>
+                      <dd>{product.composition.silimarina} mg</dd>
+                    </div>
+                  </dl>
+                </details>
                 <div className="mt-5 border-t border-[#173F35]/10 pt-4">
                   <span className="inline-flex rounded-full bg-[#F4B49D] px-3 py-1 text-xs font-bold text-[#173F35]">
                     −10 %
@@ -255,9 +278,7 @@ export default function Catalog() {
         </ul>
 
         <p className="mt-6 max-w-2xl text-xs leading-6 text-[#53645B]">
-          Las tarjetas identifican cada presentación; no representan el empaque.
-          Incorporaremos fotografías e información verificada antes de habilitar
-          la compra.
+          Imágenes promocionales de cada presentación. Consulta la ficha del producto y las indicaciones de su envase antes de utilizarlo.
         </p>
 
         <section
