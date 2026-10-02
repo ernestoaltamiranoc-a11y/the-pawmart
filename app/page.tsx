@@ -1,3 +1,5 @@
+import Catalog from "./catalog";
+
 function PawMark() {
   return (
     <svg viewBox="0 0 48 48" fill="currentColor" aria-hidden="true" className="h-9 w-9">
@@ -134,19 +136,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="coleccion" className="border-y border-[#173F35]/10 bg-[#DCEBE3]/40">
-          <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-5 py-9 sm:px-8 md:flex-row md:items-center lg:px-12">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#53645B]">CONOCE NUESTRA PRIMERA COLECCIÓN</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                Puñete. Cuidado para tu perro.
-              </h2>
-            </div>
-            <p className="max-w-xs text-sm leading-6 text-[#53645B]">
-              Estamos preparando las presentaciones y sus detalles para que puedas compararlas con claridad.
-            </p>
-          </div>
-        </section>
+        <Catalog />
 
         <section id="nosotros" className="mx-auto max-w-3xl px-6 py-16 text-center">
           <p className="text-xs font-semibold tracking-[0.2em] text-[#53645B]">HOLA, SOMOS THE PAWMART</p>
